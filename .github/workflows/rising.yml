@@ -5,11 +5,31 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-name: Build RisingOS
+name: Crave Builder(self-hosted)
 on:
   workflow_dispatch:
     # Various inputs to simplify usage of workflow.
     inputs:
+      BASE_PROJECT:
+        description: 'Choose a base project:'
+        required: true
+        default: 'LineageOS 21.0'
+        type: choice
+        options:
+          - 'LineageOS 20.0'
+          - 'LineageOS 21.0'
+          - 'ArrowOS 13.1'
+          - 'DerpFest 14.0'
+          - 'CipherOS 14'
+          - 'PixelOS 14'
+          - 'RisingOS 14'
+          - 'LineageOS 18.1'
+          - 'LineageOS 16.0'
+          - 'CyanogenMOD 14.1'
+      BUILD_DIFFERENT_ROM:
+        description: "Command to initialize a different 'repo' project:"
+        required: false
+        default: "echo 'Build Starting!'"
       REMOVALS:
         description: "Folders to be removed before syncing:"
         required: false
@@ -104,10 +124,66 @@ jobs:
     - name: Set Project variables
       id: proj-variables
       run: |
+        case "${{ github.event.inputs.BASE_PROJECT }}" in
+        "ArrowOS 13.1")
+          export PROJECTFOLDER="/crave-devspaces/Arrow13"
+          export PROJECTID="73"
+          export REPO_INIT="repo init -u https://github.com/ArrowOS/android_manifest.git -b arrow-13.1 --depth=1"
+        ;;
+        "DerpFest 14.0")
+          export PROJECTFOLDER="/crave-devspaces/DerpFest14"
+          export PROJECTID="64"
+          export REPO_INIT="repo init -u https://github.com/DerpFest-AOSP/manifest.git -b 14 --depth=1"
+        ;;
+        "LineageOS 21.0")
+          export PROJECTFOLDER="/crave-devspaces/Lineage21"
+          export PROJECTID="72"
+          export REPO_INIT="repo init -u https://github.com/LineageOS/android.git -b lineage-21.0 --git-lfs --depth=1"
+        ;;
+        "LineageOS 20.0")
+          export PROJECTFOLDER="/crave-devspaces/Lineage20"
+          export PROJECTID="36"
+          export REPO_INIT="repo init -u https://github.com/accupara/los20.git -b lineage-20.0 --git-lfs --depth=1"
+        ;;
+        "CipherOS 14")
+          export PROJECTFOLDER="/crave-devspaces/Cipher14"
+          export PROJECTID="79"
+          export REPO_INIT="repo init -u https://github.com/CipherOS/android_manifest.git -b fourteen --git-lfs --depth=1"
+        ;;
+        "PixelOS 14")
+          export PROJECTFOLDER="/crave-devspaces/Pixel14"
+          export PROJECTID="82"
+          export REPO_INIT="repo init -u https://github.com/PixelOS-AOSP/manifest.git -b fourteen --git-lfs --depth=1"
+        ;;
+        "RisingOS 14")
           export PROJECTFOLDER="/crave-devspaces/Rising14"
           export PROJECTID="86"
           export REPO_INIT="repo init -u https://github.com/RisingTechOSS/android.git -b fourteen --git-lfs --depth=1"
-          LUNCH="riseup a71 userdebug"
+        ;;
+        "LineageOS 18.1")
+          export PROJECTFOLDER="/crave-devspaces/Lineage18"
+          export PROJECTID="85"
+          export REPO_INIT="repo init -u https://github.com/accupara/los18.1.git -b lineage-18.1 --git-lfs --depth=1"
+        ;;
+        "LineageOS 16.0")
+          export PROJECTFOLDER="/crave-devspaces/Lineage16"
+          export PROJECTID="81"
+          export REPO_INIT="repo init -u https://github.com/accupara/los16.git -b lineage-16.0 --git-lfs --depth=1"
+        ;;
+        "CyanogenMOD 14.1")
+          export PROJECTFOLDER="/crave-devspaces/Cyanogen14"
+          export PROJECTID="83"
+          export REPO_INIT="repo init -u https://github.com/accupara/los-cm14.1.git -b cm-14.1 --git-lfs --depth=1"
+        ;;
+        esac
+
+        if [[ ${{ github.event.inputs.PRODUCT_NAME }} == *_* ]] && [[ ${{ github.event.inputs.PRODUCT_NAME }} != gsi_* ]] && [[ ${{ github.event.inputs.PRODUCT_NAME }} != sdk_* ]] && [[ ${{ github.event.inputs.PRODUCT_NAME }} != *_sprout ]] && [[ ${{ github.event.inputs.PRODUCT_NAME }} != Mi439_* ]] && [[ ${{ github.event.inputs.PRODUCT_NAME }} != Mi8937_* ]]; then
+          LUNCH="lunch ${{ github.event.inputs.PRODUCT_NAME }}-${{ github.event.inputs.BUILD_TYPE }}"
+        elif [[ "${{ github.event.inputs.BASE_PROJECT }}" == "RisingOS 14" ]] && [[ "${{ github.event.inputs.BUILD_DIFFERENT_ROM }}" == "echo 'Build Starting!'" ]]; then
+            LUNCH="riseup ${{ github.event.inputs.PRODUCT_NAME }} ${{ github.event.inputs.BUILD_TYPE }}"
+        else
+            LUNCH="breakfast ${{ github.event.inputs.PRODUCT_NAME }} ${{ github.event.inputs.BUILD_TYPE }}"
+        fi
 
           if [[ "${{ github.event.inputs.LOCAL_MANIFEST }}" =~ \.xml(/)?$ ]]; then
             local_manifest_url="${{ github.event.inputs.LOCAL_MANIFEST }}"
@@ -117,7 +193,7 @@ jobs:
             export LOCAL_MANIFEST="git clone ${{ github.event.inputs.LOCAL_MANIFEST }} --depth 1 -b ${{github.event.inputs.LOCAL_MANIFEST_BRANCH}} .repo/local_manifests"
           fi
 
-        echo "Building on RisingOS project"
+        echo "Building on ${{ github.event.inputs.BASE_PROJECT }} project"
         echo "PROJECTFOLDER=$PROJECTFOLDER" >> "$GITHUB_OUTPUT"
         echo "PROJECTID=$PROJECTID"  >> "$GITHUB_OUTPUT"
         echo "REPO_INIT=$REPO_INIT" >> "$GITHUB_OUTPUT"
@@ -129,7 +205,7 @@ jobs:
     - name: Display Run Parameters # Credit to azwhikaru for this part
       run: |
         echo "::group::User Environment Variables"
-        echo "Base Project: RisingOS"
+        echo "Base Project: ${{ github.event.inputs.BASE_PROJECT }}"
         echo "Extra Repo Init: ${{ github.event.inputs.BUILD_DIFFERENT_ROM }}"
         echo "Removals: ${{ github.event.inputs.REMOVALS }}"
         echo "Local Manifest: ${{ github.event.inputs.LOCAL_MANIFEST }}"
@@ -248,6 +324,26 @@ jobs:
         echo "REPO_INIT=$REPO_INIT" >> "$GITHUB_ENV"
         echo "LUNCH=$LUNCH" >> "$GITHUB_ENV"
         echo "LOCAL_MANIFEST=$LOCAL_MANIFEST" >> "$GITHUB_ENV"
+
+      # Send Build 'start' notification
+    - name: Telegram Notification
+      continue-on-error: true
+      run: |
+        send_telegram_message() {
+          local message="$1"
+          curl -s -X POST \
+          https://api.telegram.org/bot$botToken/sendMessage \
+          -d chat_id=$chatId \
+          -d text="$message" \
+          -d parse_mode="Markdown"
+        }
+        
+        send_telegram_message "Crave Project: ${{ github.event.inputs.BASE_PROJECT }}%0ACrave ProjectID: $PROJECTID %0ABuild for ${{ github.event.inputs.DEVICE_NAME }} has been queued %0ACheck Progress at: %0Ahttps://github.com/$(echo "${{ github.repository }}" | sed 's@_@\\_@g')/actions/runs/${{ github.run_id }}"
+      env:
+        chatId: ${{ secrets.TELEGRAM_TO }}
+        botToken: ${{ secrets.TELEGRAM_TOKEN }}
+        jobStatus: "Build Started"
+        skipSuccess: false
 
     - name: Cleanup
       run: rm -rf * # This cleans github actions workspace
@@ -368,19 +464,67 @@ jobs:
         # Set up build environment
         export BUILD_USERNAME=${{ github.actor }} ; \
         export BUILD_HOSTNAME=crave ; \
-        export DEVICE_MAINTAINER=Starlix ; \
+        source build/envsetup.sh && \
         export RISING_MAINTAINER=Starlix ; \
         export RISING_CHIPSET=Snapdragon 730 4G ; \
-        source build/envsetup.sh && \
 
         echo "Repository: ${{ github.repository }}"; \
         echo "Run ID: ${{ github.run_id }}"; \
 
         # Build the ROM
-        $LUNCH && \
+        riseup a71 userdebug && \
         make installclean && \
         rise b"
       timeout-minutes: 1440
+
+      # Send Build 'status' notification (Success)
+    - name: Telegram Notification
+      if:  ${{ success() }}
+      continue-on-error: true
+      run: |
+        send_telegram_message() {
+          local message="$1"
+          curl -s -X POST \
+          https://api.telegram.org/bot$botToken/sendMessage \
+          -d chat_id=$chatId \
+          -d text="$message" \
+          -d parse_mode="Markdown"
+        }
+
+        send_telegram_message "Crave Project: ${{ github.event.inputs.BASE_PROJECT }}%0ACrave ProjectID: $PROJECTID %0ABuild for ${{ github.event.inputs.DEVICE_NAME }} has Succeeded! %0ACheck Progress at: %0Ahttps://github.com/$(echo "${{ github.repository }}" | sed 's@_@\\_@g')/actions/runs/${{ github.run_id }}%0ADownload at: https://github.com/$(echo "${{ github.repository }}" | sed 's@_@\\_@g')/releases/tag/${{ github.run_id }}"
+
+      env:
+        chatId: ${{ secrets.TELEGRAM_TO }}
+        botToken: ${{ secrets.TELEGRAM_TOKEN }}
+        jobStatus: ${{ job.status }}
+        skipSuccess: false
+
+      # Send Build 'status' notification (Fail/Cancel)
+    - name: Telegram Notification
+      if:  ${{ cancelled() || failure() }}
+      continue-on-error: true
+      run: |
+        send_telegram_message() {
+          local message="$1"
+          curl -s -X POST \
+          https://api.telegram.org/bot$botToken/sendMessage \
+          -d chat_id=$chatId \
+          -d text="$message" \
+          -d parse_mode="Markdown"
+        }
+
+        if [ "$jobStatus" = "cancelled" ]; then
+          jobMessage="has been Cancelled!"
+        elif [ "$jobStatus" = "failure" ]; then
+          jobMessage="has Failed!"
+        fi
+
+        send_telegram_message "Crave Project: ${{ github.event.inputs.BASE_PROJECT }}%0ACrave ProjectID: $PROJECTID %0ABuild for ${{ github.event.inputs.DEVICE_NAME }} $jobMessage %0ACheck Progress at: %0Ahttps://github.com/$(echo "${{ github.repository }}" | sed 's@_@\\_@g')/actions/runs/${{ github.run_id }}"
+        # Todo: error.log link
+      env:
+        chatId: ${{ secrets.TELEGRAM_TO }}
+        botToken: ${{ secrets.TELEGRAM_TOKEN }}
+        jobStatus: ${{ job.status }}
 
       # Only reach this wheter the user killed the workflow.
     - name: Execute if the job is cancelled
@@ -408,6 +552,13 @@ jobs:
         crave pull out/error.log
         echo "Displaying out/error.log"
         cat out/error.log
+
+      # Upload to Telegram
+    - name: Upload Using telegram-upload
+      run: |
+        cd $PROJECTFOLDER
+        crave ssh -- "export TG_UPLOAD_LIMIT="${{ secrets.TG_UPLOAD_LIMIT }}"; bash /opt/crave/telegram/upload.sh '${{ github.event.inputs.DEVICE_NAME }}' '${{ secrets.EXTRA_FILES }}'"
+      continue-on-error: true
 
       # Remove 'crave' clone
     - name: Destroy Crave Clone
