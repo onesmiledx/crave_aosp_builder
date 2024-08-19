@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-name: Crave Builder(self-hosted)
+name: Build RisingOS
 on:
   workflow_dispatch:
     # Various inputs to simplify usage of workflow.
