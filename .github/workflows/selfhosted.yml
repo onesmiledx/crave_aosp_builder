@@ -368,6 +368,7 @@ jobs:
         export DEVICE_MAINTAINER=Starlix ; \
         export RISING_MAINTAINER=Starlix ; \
         export RISING_CHIPSET=Snapdragon 730 4G ; \
+        export WITH_GMS=true ; \
         source build/envsetup.sh && \
 
         echo "Repository: ${{ github.repository }}"; \
@@ -376,6 +377,7 @@ jobs:
         # Build the ROM
         $LUNCH && \
         make installclean && \
+        gk -s && \
         rise b"
       timeout-minutes: 1440
 
