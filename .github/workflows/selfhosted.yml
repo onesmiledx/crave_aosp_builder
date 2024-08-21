@@ -452,7 +452,6 @@ jobs:
         # Build the ROM
         riseup a71 userdebug && \
         make installclean && \
-        gk -s && \
         rise b"
       timeout-minutes: 1440
 
