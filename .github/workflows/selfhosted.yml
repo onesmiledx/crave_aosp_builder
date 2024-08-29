@@ -83,6 +83,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y tmux
+
       # Download and configure 'crave'.
     - name: Configure the 'crave' environment
       run: |
@@ -175,6 +176,7 @@ jobs:
           export REPO_INIT="repo init -u https://github.com/accupara/los-cm14.1.git -b cm-14.1 --git-lfs --depth=1"
         ;;
         esac
+
         if [[ ${{ github.event.inputs.PRODUCT_NAME }} == *_* ]] && [[ ${{ github.event.inputs.PRODUCT_NAME }} != gsi_* ]] && [[ ${{ github.event.inputs.PRODUCT_NAME }} != sdk_* ]] && [[ ${{ github.event.inputs.PRODUCT_NAME }} != *_sprout ]] && [[ ${{ github.event.inputs.PRODUCT_NAME }} != Mi439_* ]] && [[ ${{ github.event.inputs.PRODUCT_NAME }} != Mi8937_* ]]; then
           LUNCH="lunch ${{ github.event.inputs.PRODUCT_NAME }}-${{ github.event.inputs.BUILD_TYPE }}"
         elif [[ "${{ github.event.inputs.BASE_PROJECT }}" == "RisingOS 14" ]] && [[ "${{ github.event.inputs.BUILD_DIFFERENT_ROM }}" == "echo 'Build Starting!'" ]]; then
@@ -182,6 +184,7 @@ jobs:
         else
             LUNCH="breakfast ${{ github.event.inputs.PRODUCT_NAME }} ${{ github.event.inputs.BUILD_TYPE }}"
         fi
+
           if [[ "${{ github.event.inputs.LOCAL_MANIFEST }}" =~ \.xml(/)?$ ]]; then
             local_manifest_url="${{ github.event.inputs.LOCAL_MANIFEST }}"
             export local_manifest_url="${local_manifest_url%/}"  # remove trailing slash if it exists
@@ -189,6 +192,7 @@ jobs:
           else
             export LOCAL_MANIFEST="git clone ${{ github.event.inputs.LOCAL_MANIFEST }} --depth 1 -b ${{github.event.inputs.LOCAL_MANIFEST_BRANCH}} .repo/local_manifests"
           fi
+
         echo "Building on ${{ github.event.inputs.BASE_PROJECT }} project"
         echo "PROJECTFOLDER=$PROJECTFOLDER" >> "$GITHUB_OUTPUT"
         echo "PROJECTID=$PROJECTID"  >> "$GITHUB_OUTPUT"
@@ -197,6 +201,7 @@ jobs:
         echo "LUNCH=$LUNCH" >> "$GITHUB_OUTPUT"
         echo "LOCAL_MANIFEST=$LOCAL_MANIFEST" >> "$GITHUB_ENV"
         echo "LOCAL_MANIFEST=$LOCAL_MANIFEST" >> "$GITHUB_OUTPUT"
+
     - name: Display Run Parameters # Credit to azwhikaru for this part
       run: |
         echo "::group::User Environment Variables"
@@ -210,6 +215,7 @@ jobs:
         echo "Build Command: ${{ github.event.inputs.BUILD_COMMAND }}"
         echo "Clean Build: ${{ github.event.inputs.CLEAN_BUILD }}"
         echo "::endgroup::"
+
         echo "Displaying Local Manifests"
         if [[ -z "${{ secrets.DISPLAY_FALSE }}" ]]; then
           bash -c "$LOCAL_MANIFEST"
@@ -237,11 +243,13 @@ jobs:
         REPO_INIT="${{ needs.prepare.outputs.REPO_INIT }}"
         LUNCH="${{ needs.prepare.outputs.LUNCH }}"
         LOCAL_MANIFEST="${{ needs.prepare.outputs.LOCAL_MANIFEST }}"
+
         echo "PROJECTFOLDER=$PROJECTFOLDER" >> "$GITHUB_ENV"
         echo "PROJECTID=$PROJECTID"  >> "$GITHUB_ENV"
         echo "REPO_INIT=$REPO_INIT" >> "$GITHUB_ENV"
         echo "LUNCH=$LUNCH" >> "$GITHUB_ENV"
         echo "LOCAL_MANIFEST=$LOCAL_MANIFEST" >> "$GITHUB_ENV"
+
       # Download and configure 'repo'.
     - name: Configure the 'repo' environment
       run: |
@@ -261,12 +269,13 @@ jobs:
           echo "Repo already installed."
         fi
       continue-on-error: true
-
+      
       # Generate 'git' credential in base of the workflow's author.
     - name: Set-up 'git' credential(s)
       run: |
         git config --global user.name "${{ github.actor }}"
         git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+
       # Test Your Personal 'Local Manifests' against The ROM
     - name: Test Local Manifests
       if: ${{ github.event.inputs.BUILD_DIFFERENT_ROM != 'skip' }}
@@ -279,7 +288,9 @@ jobs:
         else
           ${{ github.event.inputs.BUILD_DIFFERENT_ROM }}
         fi 
+
         bash -c "$LOCAL_MANIFEST"
+
         timeout 1m repo sync --force-sync || { exit_code=$?; [ $exit_code -eq 124 ] || (echo "Error: Process failed with exit code $exit_code"; exit $exit_code); }
         du -csh . # Output Size when done
         rm -rf .repo
@@ -307,11 +318,13 @@ jobs:
         REPO_INIT="${{ needs.test.outputs.REPO_INIT }}"
         LUNCH="${{ needs.test.outputs.LUNCH }}"
         LOCAL_MANIFEST="${{ needs.test.outputs.LOCAL_MANIFEST }}"
+
         echo "PROJECTFOLDER=$PROJECTFOLDER" >> "$GITHUB_ENV"
         echo "PROJECTID=$PROJECTID"  >> "$GITHUB_ENV"
         echo "REPO_INIT=$REPO_INIT" >> "$GITHUB_ENV"
         echo "LUNCH=$LUNCH" >> "$GITHUB_ENV"
         echo "LOCAL_MANIFEST=$LOCAL_MANIFEST" >> "$GITHUB_ENV"
+
       # Send Build 'start' notification
     - name: Telegram Notification
       continue-on-error: true
@@ -352,6 +365,7 @@ jobs:
         else          
         echo "Skipping removal"
         fi
+
         if [ "${DCDEVSPACE}" == "1" ]; then
           crave clone create --projectID $PROJECTID $PROJECTFOLDER || echo "Crave clone create failed!"
         else
@@ -369,7 +383,7 @@ jobs:
         mkdir ${{ github.event.inputs.DEVICE_NAME }}
         cd ${{ github.event.inputs.DEVICE_NAME }}
       continue-on-error: true
-
+      
       # Generate 'git' credential in base of the workflow's author.
     - name: Set-up 'git' credential(s)
       run: |
@@ -412,6 +426,7 @@ jobs:
           echo "Running $REPO_INIT"
           $REPO_INIT
         fi
+
         if [ "${{ github.event.inputs.BUILD_DIFFERENT_ROM }}" == "echo 'Build Starting!'" ]; then
           export BUILD_DIFFERENT_ROM="$REPO_INIT"
           echo "Building $BUILD_DIFFERENT_ROM"
@@ -421,6 +436,7 @@ jobs:
         fi
         echo "BUILD_DIFFERENT_ROM=$BUILD_DIFFERENT_ROM" >> "$GITHUB_ENV"
         echo "We will be building with $LUNCH"
+
       # Create a 'crave' job for building.
     - name: Start compilation through 'crave'
       if: ${{ github.event.inputs.BUILD_DIFFERENT_ROM != 'skip' }}
@@ -431,28 +447,32 @@ jobs:
         if [ "${{ github.event.inputs.CLEAN_BUILD }}" == "yes" ]; then
            export CLEAN="clean"
         fi
+
         echo "Build is queued! Please wait for your build to start."
         echo "Check foss.crave.io Dashboard to see builds"
         echo "Running build's log will show up here!"
+
+
         crave run --no-patch --${CLEAN} "rm -rf .repo/local_manifests/ ${{ github.event.inputs.REMOVALS }} && \
         # Clone local_manifests repository
         $BUILD_DIFFERENT_ROM ; \
         $LOCAL_MANIFEST && \
+
         # Sync the repositories
         /opt/crave/resync.sh  && \
+
         # Set up build environment
         export BUILD_USERNAME=${{ github.actor }} ; \
         export BUILD_HOSTNAME=crave ; \
-        source build/envsetup.sh ; \
-        export RISING_MAINTAINER=Starlix ; \
-        export RISING_CHIPSET=Snapdragon 730 4G ; \
-        export WITH_GMS=true ; \
+        source build/envsetup.sh && \
+
         echo "Repository: ${{ github.repository }}"; \
         echo "Run ID: ${{ github.run_id }}"; \
+
         # Build the ROM
-        riseup a71 userdebug && \
+        $LUNCH && \
         make installclean && \
-        rise b"
+        ${{ github.event.inputs.BUILD_COMMAND }}"
       timeout-minutes: 1440
 
       # Send Build 'status' notification (Success)
@@ -468,7 +488,9 @@ jobs:
           -d text="$message" \
           -d parse_mode="Markdown"
         }
+
         send_telegram_message "Crave Project: ${{ github.event.inputs.BASE_PROJECT }}%0ACrave ProjectID: $PROJECTID %0ABuild for ${{ github.event.inputs.DEVICE_NAME }} has Succeeded! %0ACheck Progress at: %0Ahttps://github.com/$(echo "${{ github.repository }}" | sed 's@_@\\_@g')/actions/runs/${{ github.run_id }}%0ADownload at: https://github.com/$(echo "${{ github.repository }}" | sed 's@_@\\_@g')/releases/tag/${{ github.run_id }}"
+
       env:
         chatId: ${{ secrets.TELEGRAM_TO }}
         botToken: ${{ secrets.TELEGRAM_TOKEN }}
@@ -488,11 +510,13 @@ jobs:
           -d text="$message" \
           -d parse_mode="Markdown"
         }
+
         if [ "$jobStatus" = "cancelled" ]; then
           jobMessage="has been Cancelled!"
         elif [ "$jobStatus" = "failure" ]; then
           jobMessage="has Failed!"
         fi
+
         send_telegram_message "Crave Project: ${{ github.event.inputs.BASE_PROJECT }}%0ACrave ProjectID: $PROJECTID %0ABuild for ${{ github.event.inputs.DEVICE_NAME }} $jobMessage %0ACheck Progress at: %0Ahttps://github.com/$(echo "${{ github.repository }}" | sed 's@_@\\_@g')/actions/runs/${{ github.run_id }}"
         # Todo: error.log link
       env:
@@ -506,6 +530,7 @@ jobs:
       run: |
         cd $PROJECTFOLDER
         crave stop --all
+
       # Upload '.zip's and '.img's directly from 'crave' ssh.
     - name: Upload build artifact(s)
       continue-on-error: true
@@ -514,6 +539,7 @@ jobs:
         echo "${{ secrets.GITHUB_TOKEN }}" > token.txt
         crave push token.txt -d $(crave ssh -- pwd | grep -v Select | sed -s 's/\r//g')/
         crave ssh -- "export GH_UPLOAD_LIMIT="${{ secrets.GH_UPLOAD_LIMIT }}"; bash /opt/crave/github-actions/upload.sh '${{ github.run_id }}' '${{ github.event.inputs.DEVICE_NAME }}'  '${{ github.repository }}' '${{ github.event.inputs.PRODUCT_NAME }}-${{ github.run_id }}' '${{ secrets.EXTRA_FILES }}'"
+
       # Pull Errors and Display them
     - name: Display error.log
       if: ${{ failure() }}
@@ -524,6 +550,7 @@ jobs:
         crave pull out/error.log
         echo "Displaying out/error.log"
         cat out/error.log
+
       # Upload to Telegram
     - name: Upload Using telegram-upload
       run: |
