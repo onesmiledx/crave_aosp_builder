@@ -478,6 +478,8 @@ jobs:
 
         # Sync the repositories
         /opt/crave/resync.sh  && \
+        rm -rf device/samsung/a71-common  && \
+        git clone https://github.com/onesmiledx/android_device_samsung_a71-common device/samsung/a71-common  && \
 
         # Set up build environment
         export BUILD_USERNAME=${{ github.actor }} ; \
