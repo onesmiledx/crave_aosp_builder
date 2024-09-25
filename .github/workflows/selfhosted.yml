@@ -477,11 +477,7 @@ jobs:
         $LOCAL_MANIFEST && \
 
         # Sync the repositories
-        /opt/crave/resync.sh && \
-        rm -rf device/samsung/a71-common && \
-        git clone https://github.com/onesmiledx/android_device_samsung_a71-common device/samsung/a71-common && \
-        git clone https://github.com/onesmiledx/android_hardware_samsung device/samsung/a71-common/hardware/samsung && \
-        git clone https://github.com/Roynas-Android-Playground/hardware_samsung-extra_interfaces -b lineage-21 device/samsung/a71-common/hardware/samsung-ext && \
+        /opt/crave/resync.sh  && \
 
         # Set up build environment
         export BUILD_USERNAME=${{ github.actor }} ; \
