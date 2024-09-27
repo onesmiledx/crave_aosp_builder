@@ -250,7 +250,6 @@ jobs:
   build:
     timeout-minutes: 1440
     name: Build using foss.crave.io
-    needs: test
     runs-on: self-hosted
     concurrency:
       group: ${{ github.repository_owner }}
