@@ -246,8 +246,8 @@ jobs:
       REPO_INIT: ${{ steps.proj-variables.outputs.REPO_INIT }}
       LUNCH: ${{ steps.proj-variables.outputs.LUNCH }}
       LOCAL_MANIFEST: ${{ steps.proj-variables.outputs.LOCAL_MANIFEST }}
-
-build:
+      
+  build:
     timeout-minutes: 1440
     name: Build using foss.crave.io
     needs: test
